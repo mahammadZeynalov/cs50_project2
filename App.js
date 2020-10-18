@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import create from 'zustand';
 import { StyleSheet, Image, useWindowDimensions, View, ScrollView } from 'react-native';
-import { Container, Header, Title, Content, Footer, FooterTab, Button, Left, Right, Body, Icon, Text, Spinner, Item, Input } from 'native-base';
+import { Container, Header, Title, Content, Footer, FooterTab, Button, Left, Right, Body, Icon, Text, Spinner, Item, Input, H1 } from 'native-base';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
@@ -46,22 +46,19 @@ export default function App() {
 
 function Search({ navigation }) {
   const [title, setTitle] = useState('star');
-  // const setMovie = useMoviesStore(state => state.setMovie);
+  const window = useWindowDimensions();
+  const setMovie = useMoviesStore(state => state.setMovie);
   return (
     <Container>
       <Header>
-        <Left>
-          <Button transparent>
-            <Icon name='menu' />
-          </Button>
-        </Left>
+        <Left />
         <Body>
           <Title>Search</Title>
         </Body>
         <Right />
       </Header>
       <Content>
-        <Item regular>
+        <Item regular style={{ width: window.width * 0.8, marginTop: 30, alignSelf: 'center' }}>
           <Input
             placeholder='Regular Textbox'
             value={title}
@@ -70,9 +67,11 @@ function Search({ navigation }) {
           />
         </Item>
         <Button
+          info
+          style={{ padding: '10%', alignSelf: 'center', marginTop: 20 }}
           onPress={() => {
             navigation.navigate('Movie');
-            // setMovie(title);
+            setMovie(title);
           }}>
           <Text>Search</Text>
         </Button>
@@ -85,12 +84,12 @@ function Movie({ navigation }) {
   const movie = useMoviesStore(state => state.movie);
   const loading = useMoviesStore(state => state.loading);
   const error = useMoviesStore(state => state.error);
-  const setMovie = useMoviesStore(state => state.setMovie);
+  // const setMovie = useMoviesStore(state => state.setMovie);
   const window = useWindowDimensions();
 
-  useEffect(() => {
-    setMovie('the lord of the rings');
-  }, []);
+  // useEffect(() => {
+  //   setMovie('the lord of the rings');
+  // }, []);
   return (
     <Container>
       <Header>
@@ -105,31 +104,43 @@ function Movie({ navigation }) {
         {error && <Text>{error}</Text>}
         {movie &&
           <>
-            <Text style={{ width: window.width, textAlign: 'center' }}>{movie.Title}</Text>
-            <View style={styles.shadow}>
+            <H1
+              style={{
+                width: window.width,
+                textAlign: 'center',
+                padding: 10,
+                marginBottom: 10
+              }}
+            >{movie.Title}</H1>
+            <View style={[styles.shadow, { alignItems: 'center', width: window.width }]}>
               <Image
                 source={{
                   uri: movie.Poster
                 }}
-                style={[styles.poster, { width: window.width / 2.5, height: window.height / 2.5 }]}
+                style={[
+                  styles.poster,
+                  {
+                    width: window.width / 2.5,
+                    height: window.height / 2.7
+                  }]}
               />
             </View>
-            <View>
-              <Text>Actors: {movie.Actors}</Text>
+            <View style={styles.infoBlock}>
               <Text>Country: {movie.Country}</Text>
-              <Text>Director: {movie.Director}</Text>
+              <Text>Released: {movie.Released}</Text>
               <Text>Genre: {movie.Genre}</Text>
-              <Text>Duratoin: {movie.Runtime}</Text>
+              <Text>Director: {movie.Director}</Text>
+              <Text>Actors: {movie.Actors}</Text>
+              <Text>Duration: {movie.Runtime}</Text>
               {
                 movie.Awards && <Text>Awards: {movie.Awards}</Text>
               }
-              <Text>Released: {movie.Released}</Text>
               <Text>IMDB rating: {movie.imdbRating}</Text>
-            <Text>{movie.Plot}</Text>
+              <Text>{movie.Plot}</Text>
               <View>
                 {
                   movie.Ratings.map(rating =>
-                    <View key = {rating.Source}>
+                    <View key={rating.Source}>
                       <Text>{rating.Source}</Text>
                       <Text>{rating.Value}</Text>
                     </View>)
@@ -150,7 +161,14 @@ const styles = StyleSheet.create({
   shadow: {
     shadowColor: 'black',
     shadowOffset: { width: 5, height: 5 },
-    shadowRadius: 5,
+    shadowRadius: 3,
     shadowOpacity: 0.8
+  },
+  infoBlock: {
+    marginTop: 20,
+    padding: 10
+  },
+  infoItem: {
+    padding: 5
   }
 });
