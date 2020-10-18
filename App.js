@@ -1,19 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import create from 'zustand';
-import { StyleSheet, Text, ScrollView, TextInput, Button, ActivityIndicator, View, FlatList, Item, SafeAreaView } from 'react-native';
+import { StyleSheet, Image, useWindowDimensions, View, ScrollView } from 'react-native';
+import { Container, Header, Title, Content, Footer, FooterTab, Button, Left, Right, Body, Icon, Text, Spinner, Item, Input } from 'native-base';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 
 const Stack = createStackNavigator();
 const useMoviesStore = create(set => ({
-  movies: null,
-  setMovies: async (title) => {
-    set({ loading: true })
+  movie: null,
+  setMovie: async (title) => {
+    set({ movie: null, loading: true, error: false })
     try {
       const response = await fetch(`http://www.omdbapi.com/?t=${title}&apikey=9bcdf7b3`);
-      const movies = await response.json();
-      set({ movies })
+      const movie = await response.json();
+      console.log(movie);
+      if (!(movie.Response === 'False')) {
+        set({ movie })
+      } else {
+        set({ error: movie.Error })
+      }
     } catch (error) {
       set({ error: error.message })
     } finally {
@@ -27,72 +33,124 @@ const useMoviesStore = create(set => ({
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false
+        }}>
         <Stack.Screen name='Search' component={Search} />
-        <Stack.Screen name='Movies' component={Movies} />
-        <Stack.Screen name='Details' component={MovieDetails} />
+        <Stack.Screen name='Movie' component={Movie} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
 function Search({ navigation }) {
-  const [title, setTitle] = useState('');
-  const setMovies = useMoviesStore(state => state.setMovies);
+  const [title, setTitle] = useState('star');
+  // const setMovie = useMoviesStore(state => state.setMovie);
   return (
-    <ScrollView contentContainerStyle={styles.container} scrollEnabled={false}>
-      <TextInput value={title} onChangeText={text => setTitle(text)} style={styles.searchInput} placeholder='Search the film' />
-      <Button title='Search' onPress={() => {
-        navigation.navigate('Movies');
-        setMovies(title);
-      }} />
-    </ScrollView>
+    <Container>
+      <Header>
+        <Left>
+          <Button transparent>
+            <Icon name='menu' />
+          </Button>
+        </Left>
+        <Body>
+          <Title>Search</Title>
+        </Body>
+        <Right />
+      </Header>
+      <Content>
+        <Item regular>
+          <Input
+            placeholder='Regular Textbox'
+            value={title}
+            onChangeText={text => setTitle(text)}
+            placeholder='Search the film'
+          />
+        </Item>
+        <Button
+          onPress={() => {
+            navigation.navigate('Movie');
+            // setMovie(title);
+          }}>
+          <Text>Search</Text>
+        </Button>
+      </Content>
+    </Container>
   )
 }
 
-function Movies({ navigation }) {
-  const { movies, setMovies, loading, error } = useMoviesStore(state => state);
-  const renderItem = ({ item }) => {
-    console.log(item);
-    return (
-    <Text>{item["Actors"]}</Text>
-  )};
-  return (
-    <SafeAreaView style = {styles.container}>
-      {
-        movies &&
-        <FlatList
-          data={movies}
-          renderItem={renderItem}
-          keyExtractor={item => item.imdbID}
-        />
-      }
-      <ActivityIndicator animating={loading} size='large' />
-    </ SafeAreaView >
-  )
-}
+function Movie({ navigation }) {
+  const movie = useMoviesStore(state => state.movie);
+  const loading = useMoviesStore(state => state.loading);
+  const error = useMoviesStore(state => state.error);
+  const setMovie = useMoviesStore(state => state.setMovie);
+  const window = useWindowDimensions();
 
-function MovieDetails() {
+  useEffect(() => {
+    setMovie('the lord of the rings');
+  }, []);
   return (
-    <View>
-      <Text>Movies Detailed</Text>
-    </View>
+    <Container>
+      <Header>
+        <Left />
+        <Body>
+          <Title>Movie</Title>
+        </Body>
+        <Right />
+      </Header>
+      <Content>
+        {loading && <Spinner />}
+        {error && <Text>{error}</Text>}
+        {movie &&
+          <>
+            <Text style={{ width: window.width, textAlign: 'center' }}>{movie.Title}</Text>
+            <View style={styles.shadow}>
+              <Image
+                source={{
+                  uri: movie.Poster
+                }}
+                style={[styles.poster, { width: window.width / 2.5, height: window.height / 2.5 }]}
+              />
+            </View>
+            <View>
+              <Text>Actors: {movie.Actors}</Text>
+              <Text>Country: {movie.Country}</Text>
+              <Text>Director: {movie.Director}</Text>
+              <Text>Genre: {movie.Genre}</Text>
+              <Text>Duratoin: {movie.Runtime}</Text>
+              {
+                movie.Awards && <Text>Awards: {movie.Awards}</Text>
+              }
+              <Text>Released: {movie.Released}</Text>
+              <Text>IMDB rating: {movie.imdbRating}</Text>
+            <Text>{movie.Plot}</Text>
+              <View>
+                {
+                  movie.Ratings.map(rating =>
+                    <View key = {rating.Source}>
+                      <Text>{rating.Source}</Text>
+                      <Text>{rating.Value}</Text>
+                    </View>)
+                }
+              </View>
+            </View>
+          </>
+        }
+      </Content>
+    </ Container >
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+  poster: {
+    overflow: 'visible'
   },
-  searchInput: {
-    height: 50,
-    borderWidth: 1,
-    width: 280,
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 20
+  shadow: {
+    shadowColor: 'black',
+    shadowOffset: { width: 5, height: 5 },
+    shadowRadius: 5,
+    shadowOpacity: 0.8
   }
 });
